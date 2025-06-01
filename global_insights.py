@@ -4,25 +4,34 @@ def run():
     st.title("🌍 Global Insights")
 
     st.markdown("""
-    This section will provide insights on:
-    - Industry trends and job market analytics using **Azure OpenAI** and **Azure Machine Learning**
-    - Geospatial insights and location-based data visualizations with **Azure Maps**
-    - Document intelligence for extracting career-relevant insights with **Azure Document Intelligence**
+    Welcome to the **Global Insights** section, where we'll help you understand:
 
-    **Currently this is a placeholder UI.**  
-    In the next steps, we will integrate real data and visualizations from Azure services here.
+    - Industry trends and job market analytics powered by **Azure OpenAI** and **Azure Machine Learning**.
+    - Geospatial insights and location-based visualizations using **Azure Maps**.
+    - Document intelligence to extract career-relevant insights with **Azure Document Intelligence**.
+
+    > **Note:** This is currently a placeholder UI. Real data and interactive visuals will be integrated soon.
     """)
 
-    # Example: Placeholder for job trends chart
-    st.subheader("Job Market Trends")
-    st.write("This is where job market trend graphs will appear.")
+    st.markdown("---")
 
-    # Placeholder for map visualization
-    st.subheader("Geospatial Job Data")
-    st.write("This is where Azure Maps-based visualizations will appear.")
+    # Placeholder: Job market trends
+    st.subheader("📈 Job Market Trends")
+    st.info("Job market trend graphs will appear here once integrated.")
 
-    # Placeholder for document intelligence insights
-    st.subheader("Document Intelligence")
-    st.write("Insights extracted from resumes, cover letters, or job descriptions.")
+    st.markdown("---")
 
-    # You can add sample visuals or text here as you develop the integration
+    # Placeholder: Geospatial data visualization
+    st.subheader("🗺️ Geospatial Job Data")
+    st.info("Azure Maps visualizations will be displayed here.")
+
+    st.markdown("---")
+
+    # Placeholder: Document intelligence insights
+    st.subheader("📄 Document Intelligence")
+    st.info("Insights extracted from resumes, cover letters, and job descriptions will appear here.")
+
+    st.markdown("---")
+
+    st.caption("Stay tuned as we build out these features with live data and interactive charts!")
+

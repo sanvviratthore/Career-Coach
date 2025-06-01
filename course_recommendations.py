@@ -6,20 +6,52 @@ def run():
 
     st.markdown("### Build your personalized study plan")
 
-    # Let user enter skills to improve separated by commas
-    skill_input = st.text_input("Enter skills you want to learn or improve (comma separated):")
+    skill_input = st.text_input(
+        "Enter skills you want to learn or improve (comma separated):",
+        placeholder="e.g., Python, Data Analysis, Machine Learning"
+    )
 
+    skills = []
     if skill_input:
         skills = [s.strip() for s in skill_input.split(",") if s.strip()]
-        st.write(f"Planning study schedule for: {', '.join(skills)}")
+        if skills:
+            st.write(f"Planning study schedule for: **{', '.join(skills)}**")
 
-        start_date = st.date_input("Start Date", value=date.today())
+            start_date = st.date_input("Select Start Date", value=date.today())
 
-        plan_length = st.slider("Number of weeks for the study plan:", 1, 12, 4)
+            plan_length = st.slider(
+                "Select the number of weeks for your study plan:",
+                min_value=1,
+                max_value=12,
+                value=min(len(skills), 4),
+                help="Adjust duration based on your availability"
+            )
 
-        if st.button("Generate Study Plan"):
-            st.markdown("### Your Study Plan:")
-            for i, skill in enumerate(skills, 1):
-                week = start_date + timedelta(weeks=i-1)
-                st.write(f"**Week {i} ({week.strftime('%b %d, %Y')}):** Focus on learning **{skill}**")
+            if st.button("Generate Study Plan"):
+                st.markdown("### Your Study Plan:")
+                for i in range(plan_length):
+                    week_start = start_date + timedelta(weeks=i)
+                    # Cycle through skills if plan_length > number of skills
+                    skill = skills[i % len(skills)]
+                    st.write(f"**Week {i + 1} ({week_start.strftime('%b %d, %Y')}):** Focus on learning **{skill}**")
+        else:
+            st.warning("Please enter at least one skill to create a study plan.")
+        st.markdown("---")
+
+    st.subheader("🎯 Recommended Courses for You")
+
+    sample_courses = {
+        "Python": ["Python for Everybody - Coursera", "Automate the Boring Stuff with Python"],
+        "Data Analysis": ["Data Analysis with Pandas - DataCamp", "Excel to MySQL: Analytic Techniques - Coursera"],
+        "Machine Learning": ["Machine Learning by Andrew Ng - Coursera", "Intro to Machine Learning - Udacity"],
+    }
+
+    if skills:
+        for skill in skills:
+            courses = sample_courses.get(skill, ["No course data yet"])
+            st.markdown(f"**{skill}:**")
+            for c in courses:
+                st.write(f"- {c}")
+    else:
+        st.info("Start by typing the skills you'd like to learn or improve.")
 
