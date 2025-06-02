@@ -1,28 +1,28 @@
-import requests
+from openai import AzureOpenAI
 
-def ask_azure_openai(prompt, deployment_name, api_key, endpoint_base):
-    endpoint = f"{endpoint_base}/openai/deployments/{deployment_name}/chat/completions?api-version=2023-05-15"
+endpoint = "https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/"
+deployment = "gpt-35-turbo"  # Your deployment name here
+subscription_key = "F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI"  # Replace this!
+api_version = "2024-12-01-preview"  # or your supported version
 
-    headers = {
-        "Content-Type": "application/json",
-        "api-key": "2MTbbBLRpmpNv7sP6UJYF3kM3CuUhbVUL1Dad0mYzUoeVPuBvL8GJQQJ99BFAC77bzfXJ3w3AAABACOGUO8O"
-    }
+client = AzureOpenAI(
+    api_key=subscription_key,
+    azure_endpoint=endpoint,
+    api_version=api_version,
+)
 
-    data = {
-        "messages": [
-            {"role": "system", "content": "You are a helpful career coach assistant."},
-            {"role": "user", "content": prompt}
-        ],
-        "max_tokens": 300,
-        "temperature": 0.7
-    }
+def ask_azure_openai(messages):
+    try:
+        response = client.chat.completions.create(
+            model=deployment,
+            messages=messages,
+            max_tokens=500,
+            temperature=1.0,
+            top_p=1.0,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error: {e}"
 
-    response = requests.post(endpoint, headers=headers, json=data)
-
-    if response.status_code == 200:
-        result = response.json()
-        return result["choices"][0]["message"]["content"]
-    else:
-        return f"Error: {response.status_code} - {response.text}"
 
 
