@@ -2,7 +2,36 @@ import streamlit as st
 import pandas as pd
 import re
 import matplotlib.pyplot as plt
-import fitz  # PyMuPDF for PDF reading
+from azure.ai.formrecognizer import DocumentAnalysisClient
+from azure.core.credentials import AzureKeyCredential
+
+# Your existing imports and code ...
+
+# Azure Document Intelligence config
+AZURE_FORM_RECOGNIZER_ENDPOINT = "https://careercoach-formrecognizer.cognitiveservices.azure.com/"
+AZURE_FORM_RECOGNIZER_KEY = "ElgiMCrTNyuLEyrikbAIjuQHUD9lzVrLT242zHAxdD4iTQewXj7aJQQJ99BFACYeBjFXJ3w3AAALACOGtUSC"
+
+client = DocumentAnalysisClient(
+    endpoint=AZURE_FORM_RECOGNIZER_ENDPOINT,
+    credential=AzureKeyCredential(AZURE_FORM_RECOGNIZER_KEY)
+)
+
+def analyze_resume_with_azure(pdf_bytes):
+    poller = client.begin_analyze_document(
+        "prebuilt-document",
+        document=pdf_bytes
+    )
+    result = poller.result()
+
+    full_text = ""
+    for page in result.pages:
+        # page.lines is a list of line objects; extract their content strings
+        page_text = " ".join([line.content for line in page.lines])
+        full_text += page_text + " "
+
+    # Convert entire text to lowercase once all pages are processed
+    return full_text.lower()
+
 
 def run():
     st.title("📄 Resume Skill Matcher")
@@ -11,29 +40,17 @@ def run():
     def load_data():
         return pd.read_csv('job_skills.csv')
 
-    def extract_job_title(url):
-        # Extract readable job title from URL
-        parts = url.split('/view/')
-        if len(parts) > 1:
-            title_part = parts[1]
-            title_part = re.sub(r'-\d+.*$', '', title_part)  # Remove trailing numbers and chars
-            title = title_part.replace('-', ' ').title()
-            return title
-        return "Unknown Job"
-
+    # Existing job title extraction and UI code ...
     df_jobs = load_data()
-    df_jobs['job_title'] = df_jobs['job_link'].apply(extract_job_title)
+    df_jobs['job_title'] = df_jobs['job_link'].apply(
+        lambda url: re.sub(r'-\d+.*$', '', url.split('/view/')[1]).replace('-', ' ').title() if '/view/' in url else "Unknown Job"
+    )
 
-    # Limit to top 100 unique job titles for performance & UX
     job_titles = df_jobs['job_title'].unique()[:100]
-
     selected_job_title = st.selectbox("Select a job:", job_titles)
 
-    # Get job link and skills for selected job
     selected_job_row = df_jobs[df_jobs['job_title'] == selected_job_title].iloc[0]
-    selected_job_link = selected_job_row['job_link']
-    skills_str = selected_job_row['job_skills']
-    skills_list = [skill.strip().lower() for skill in skills_str.split(',') if skill.strip()]
+    skills_list = [skill.strip().lower() for skill in selected_job_row['job_skills'].split(',') if skill.strip()]
 
     st.markdown(f"### Skills required for **{selected_job_title}**")
     st.write(", ".join(skills_list))
@@ -42,17 +59,11 @@ def run():
 
     if uploaded_file:
         try:
-            # Read PDF content from uploaded file
-            pdf_document = fitz.open(stream=uploaded_file.read(), filetype="pdf")
-            resume_text = ""
-            for page_num in range(len(pdf_document)):
-                page = pdf_document.load_page(page_num)
-                resume_text += page.get_text()
+            pdf_bytes = uploaded_file.read()
+            resume_text = analyze_resume_with_azure(pdf_bytes)
 
-            resume_text = resume_text.lower()
-
-            with st.expander("Preview extracted resume text"):
-                st.text(resume_text[:3000] + ("..." if len(resume_text) > 3000 else ""))  # Limit preview to 3k chars
+            with st.expander("Preview extracted resume text (first 3000 chars)"):
+                st.text(resume_text[:3000] + ("..." if len(resume_text) > 3000 else ""))
 
             matched = [skill for skill in skills_list if skill in resume_text]
             missing = [skill for skill in skills_list if skill not in resume_text]
@@ -81,5 +92,6 @@ def run():
             show_skill_gap_chart(matched, missing)
 
         except Exception as e:
-            st.error(f"Failed to read PDF file. Please upload a valid PDF. Error: {e}")
+            st.error(f"Failed to analyze resume. Error: {e}")
+
 
