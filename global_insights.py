@@ -1,38 +1,35 @@
 import streamlit as st
-from azure.ai.formrecognizer import DocumentAnalysisClient
-from azure.core.credentials import AzureKeyCredential
+import folium
+from streamlit_folium import st_folium
+import requests
 
-# Azure Document Intelligence setup
-AZURE_FORM_RECOGNIZER_ENDPOINT = "https://careercoach-formrecognizer.cognitiveservices.azure.com/"
-AZURE_FORM_RECOGNIZER_KEY = "ElgiMCrTNyuLEyrikbAIjuQHUD9lzVrLT242zHAxdD4iTQewXj7aJQQJ99BFACYeBjFXJ3w3AAALACOGtUSC"  # Replace securely in production
+AZURE_MAPS_SUBSCRIPTION_KEY = "3pdOV7PLWQOOLunAlvdKIlRGdj0g7qPG6UgsnkO19Ge0VjSEouafJQQJ99BFACYeBjFAfOwiAAAgAZMP49Wn"
 
-client = DocumentAnalysisClient(
-    endpoint=AZURE_FORM_RECOGNIZER_ENDPOINT,
-    credential=AzureKeyCredential(AZURE_FORM_RECOGNIZER_KEY)
-)
-
-def extract_text(uploaded_file):
-    try:
-        poller = client.begin_analyze_document("prebuilt-document", document=uploaded_file)
-        result = poller.result()
-        full_text = ""
-        for page in result.pages:
-            for line in page.lines:
-                full_text += line.content + " "
-        return full_text.lower()
-    except Exception as e:
-        st.error(f"Failed to extract document content. Error: {e}")
-        return ""
+def search_job_locations(query="job", lat=28.6139, lon=77.2090):
+    url = f"https://atlas.microsoft.com/search/poi/json"
+    params = {
+        'subscription-key': AZURE_MAPS_SUBSCRIPTION_KEY,
+        'api-version': '1.0',
+        'query': query,
+        'lat': lat,
+        'lon': lon,
+        'limit': 5
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json().get("results", [])
+    else:
+        return []
 
 def run():
     st.title("🌍 Global Insights")
 
     st.markdown("""
-    Welcome to the **Global Insights** section, where we'll help you understand:
+    Welcome to the **Global Insights** section, where we provide:
 
-    - Industry trends and job market analytics powered by **Azure OpenAI** and **Azure Machine Learning**.
-    - Geospatial insights and location-based visualizations using **Azure Maps**.
-    - Document intelligence to extract career-relevant insights with **Azure Document Intelligence**.
+    - Industry trends and analytics powered by **Azure OpenAI** and **Machine Learning**.
+    - Real geospatial insights with **Azure Maps**.
+    - Smart resume and document analysis via **Azure Document Intelligence**.
     """)
 
     st.markdown("---")
@@ -40,34 +37,28 @@ def run():
     st.info("Job market trend graphs will appear here once integrated.")
 
     st.markdown("---")
-    st.subheader("🗺️ Geospatial Job Data")
-    st.info("Azure Maps visualizations will be displayed here.")
+    st.subheader("🗺️ Geospatial Job Data (Live from Azure Maps)")
+
+    st.write("Searching for job centers near Delhi...")
+
+    job_locations = search_job_locations()
+
+    m = folium.Map(location=[28.6139, 77.2090], zoom_start=10)
+
+    for place in job_locations:
+        position = place['position']
+        poi_name = place['poi']['name']
+        folium.Marker(
+            [position['lat'], position['lon']],
+            popup=poi_name
+        ).add_to(m)
+
+    st_folium(m, width=700, height=500)
 
     st.markdown("---")
-    st.subheader("📄 Document Intelligence Insights")
-
-    uploaded_file = st.file_uploader("Upload a resume, cover letter, or job description (PDF)", type=["pdf"])
-    if uploaded_file:
-        with st.spinner("Analyzing document..."):
-            extracted_text = extract_text(uploaded_file)
-
-        if extracted_text:
-            st.success("Text successfully extracted! Here's a preview:")
-            st.text_area("📄 Extracted Content Preview", extracted_text[:1000], height=200)
-
-            # Optional: Simple keyword check
-            keywords = ["python", "machine learning", "communication", "team", "intern", "developer"]
-            found_keywords = [kw for kw in keywords if kw in extracted_text]
-
-            if found_keywords:
-                st.markdown("### 🔍 Keywords Detected:")
-                for kw in found_keywords:
-                    st.markdown(f"- {kw.title()}")
-            else:
-                st.info("No predefined keywords found.")
-        else:
-            st.warning("No text extracted from document.")
+    st.subheader("📄 Document Intelligence")
+    st.info("Insights from resumes and job descriptions will appear here.")
 
     st.markdown("---")
-    st.caption("Stay tuned as we build out these features with live data and interactive charts!")
+    st.caption("Powered by Azure Maps, OpenAI, and more 🚀")
 
