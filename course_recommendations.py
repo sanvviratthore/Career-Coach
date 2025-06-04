@@ -1,57 +1,51 @@
 import streamlit as st
-from datetime import date, timedelta
+from openai import AzureOpenAI
+
+# --- Azure OpenAI connection details (fill in your own) ---------------
+API_VERSION   = "2024-12-01-preview"
+AZURE_ENDPOINT = "https://careercoach-openai.openai.azure.com/"
+DEPLOYMENT     = "gpt-35-turbo"        # your deployment name
+API_KEY        = "2MTbbBLRpmpNv7sP6UJYF3kM3CuUhbVUL1Dad0mYzUoeVPuBvL8GJQQJ99BFAC77bzfXJ3w3AAABACOGUO8O" # keep visible per your request
+# ---------------------------------------------------------------------
+
+client = AzureOpenAI(
+    api_version   = API_VERSION,
+    azure_endpoint= AZURE_ENDPOINT,
+    api_key       = API_KEY,
+)
+
+SYSTEM_PROMPT = (
+    "You are a course-recommendation assistant. "
+    "When given a tech topic, output **exactly 10** up-to-date online courses. "
+    "For each course, return a Markdown bullet with: "
+    "• **Course Title**  • Platform  • 1-line reason  • Link. "
+    "Keep responses concise."
+)
+
+@st.cache_data(show_spinner=False, ttl=86400)
+def recommend_courses(topic: str) -> str:
+    """Call Azure OpenAI and return raw Markdown."""
+    chat = client.chat.completions.create(
+        model     = DEPLOYMENT,
+        messages  = [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user",   "content": topic.strip()},
+        ],
+        temperature = 0.7,
+        max_tokens  = 800,
+    )
+    return chat.choices[0].message.content
 
 def run():
-    st.title("📚 Course Recommendations")
+    st.title("🎯 Course Recommendations")
+    topic = st.text_input("What do you want to learn? (e.g., ‘Flutter’, ‘Data Engineering’)")
+    
+    if topic:
+        with st.spinner("Fetching top courses…"):
+            md = recommend_courses(topic)
+        st.markdown(md, unsafe_allow_html=True)
 
-    st.markdown("### Build your personalized study plan")
-
-    skill_input = st.text_input(
-        "Enter skills you want to learn or improve (comma separated):",
-        placeholder="e.g., Python, Data Analysis, Machine Learning"
-    )
-
-    skills = []
-    if skill_input:
-        skills = [s.strip() for s in skill_input.split(",") if s.strip()]
-        if skills:
-            st.write(f"Planning study schedule for: **{', '.join(skills)}**")
-
-            start_date = st.date_input("Select Start Date", value=date.today())
-
-            plan_length = st.slider(
-                "Select the number of weeks for your study plan:",
-                min_value=1,
-                max_value=12,
-                value=min(len(skills), 4),
-                help="Adjust duration based on your availability"
-            )
-
-            if st.button("Generate Study Plan"):
-                st.markdown("### Your Study Plan:")
-                for i in range(plan_length):
-                    week_start = start_date + timedelta(weeks=i)
-                    # Cycle through skills if plan_length > number of skills
-                    skill = skills[i % len(skills)]
-                    st.write(f"**Week {i + 1} ({week_start.strftime('%b %d, %Y')}):** Focus on learning **{skill}**")
-        else:
-            st.warning("Please enter at least one skill to create a study plan.")
-        st.markdown("---")
-
-    st.subheader("🎯 Recommended Courses for You")
-
-    sample_courses = {
-        "Python": ["Python for Everybody - Coursera", "Automate the Boring Stuff with Python"],
-        "Data Analysis": ["Data Analysis with Pandas - DataCamp", "Excel to MySQL: Analytic Techniques - Coursera"],
-        "Machine Learning": ["Machine Learning by Andrew Ng - Coursera", "Intro to Machine Learning - Udacity"],
-    }
-
-    if skills:
-        for skill in skills:
-            courses = sample_courses.get(skill, ["No course data yet"])
-            st.markdown(f"**{skill}:**")
-            for c in courses:
-                st.write(f"- {c}")
-    else:
-        st.info("Start by typing the skills you'd like to learn or improve.")
+# Allow standalone execution
+if __name__ == "__main__":
+    run()
 

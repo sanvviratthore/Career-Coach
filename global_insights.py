@@ -3,62 +3,115 @@ import folium
 from streamlit_folium import st_folium
 import requests
 
-AZURE_MAPS_SUBSCRIPTION_KEY = "3pdOV7PLWQOOLunAlvdKIlRGdj0g7qPG6UgsnkO19Ge0VjSEouafJQQJ99BFACYeBjFAfOwiAAAgAZMP49Wn"
+# ▸ Azure Maps subscription key (keep visible per your request)
+AZURE_MAPS_KEY = "3pdOV7PLWQOOLunAlvdKIlRGdj0g7qPG6UgsnkO19Ge0VjSEouafJQQJ99BFACYeBjFAfOwiAAAgAZMP49Wn"
 
-def search_job_locations(query="job", lat=28.6139, lon=77.2090):
-    url = f"https://atlas.microsoft.com/search/poi/json"
+# ---------------- Azure Maps helpers ---------------- #
+def geocode_place(place: str):
+    """Return (lat, lon, formatted_address) for a place string."""
+    url = "https://atlas.microsoft.com/search/address/json"
     params = {
-        'subscription-key': AZURE_MAPS_SUBSCRIPTION_KEY,
-        'api-version': '1.0',
-        'query': query,
-        'lat': lat,
-        'lon': lon,
-        'limit': 5
+        "subscription-key": AZURE_MAPS_KEY,
+        "api-version": "1.0",
+        "query": place,
+        "limit": 1
     }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        return response.json().get("results", [])
-    else:
-        return []
+    r = requests.get(url, params=params, timeout=10)
+    r.raise_for_status()
+    results = r.json().get("results", [])
+    if results:
+        pos = results[0]["position"]
+        addr = results[0]["address"]["freeformAddress"]
+        return pos["lat"], pos["lon"], addr
+    return None, None, None
 
+
+def search_job_locations(lat: float, lon: float, query: str = "job", limit: int = 10):
+    """Return POIs for given query around lat/lon."""
+    url = "https://atlas.microsoft.com/search/poi/json"
+    params = {
+        "subscription-key": AZURE_MAPS_KEY,
+        "api-version": "1.0",
+        "lat": lat,
+        "lon": lon,
+        "query": query,
+        "radius": 25000,   # 25 km radius
+        "limit": limit
+    }
+    r = requests.get(url, params=params, timeout=10)
+    r.raise_for_status()
+    return r.json().get("results", [])
+
+
+# ---------------- Streamlit page ---------------- #
 def run():
-    st.title("🌍 Global Insights")
+    st.title("🌍 Global Insights – Job Hot-Spots")
 
-    st.markdown("""
-    Welcome to the **Global Insights** section, where we provide:
+    st.markdown(
+        "Select a place (**type a city** or **click** on the map) to discover nearby "
+        "**job/industry POIs** using Azure Maps."
+    )
 
-    - Industry trends and analytics powered by **Azure OpenAI** and **Machine Learning**.
-    - Real geospatial insights with **Azure Maps**.
-    - Smart resume and document analysis via **Azure Document Intelligence**.
-    """)
+    # --- Text input for city search
+    city_query = st.text_input("🔎 Search another city (e.g., Bengaluru, London):", value="Delhi")
 
-    st.markdown("---")
-    st.subheader("📈 Job Market Trends")
-    st.info("Job market trend graphs will appear here once integrated.")
+    # --- Geocode on button
+    if st.button("Go to city"):
+        lat, lon, addr = geocode_place(city_query)
+        if lat is None:
+            st.error("Place not found.")
+            st.stop()
+        st.session_state["center"] = (lat, lon, addr)
 
-    st.markdown("---")
-    st.subheader("🗺️ Geospatial Job Data (Live from Azure Maps)")
+    # Initialise map center in session_state
+    if "center" not in st.session_state:
+        # Default to Delhi on first load
+        st.session_state["center"] = (28.6139, 77.2090, "Delhi, India")
 
-    st.write("Searching for job centers near Delhi...")
+    center_lat, center_lon, center_addr = st.session_state["center"]
 
-    job_locations = search_job_locations()
+    # --- Folium map (returns click events)
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+    folium.Marker([center_lat, center_lon], tooltip=center_addr, icon=folium.Icon(color="blue")).add_to(m)
 
-    m = folium.Map(location=[28.6139, 77.2090], zoom_start=10)
+    map_state = st_folium(m, width=700, height=450)
 
-    for place in job_locations:
-        position = place['position']
-        poi_name = place['poi']['name']
+    # --- Handle user map click
+    if map_state and map_state.get("last_clicked"):
+        click_lat = map_state["last_clicked"]["lat"]
+        click_lon = map_state["last_clicked"]["lng"]
+        st.session_state["center"] = (click_lat, click_lon, f"Lat {click_lat:.3f}, Lon {click_lon:.3f}")
+        center_lat, center_lon, center_addr = st.session_state["center"]
+
+    # --- Fetch POIs around current center
+    with st.spinner("Fetching nearby job centres…"):
+        pois = search_job_locations(center_lat, center_lon)
+
+    if not pois:
+        st.info("No job-related POIs found within 25 km.")
+        return
+
+    st.markdown(f"### 📌 Job POIs near **{center_addr}**")
+
+    # --- POI list & secondary map with pins
+    poi_map = folium.Map(location=[center_lat, center_lon], zoom_start=12)
+    for idx, poi in enumerate(pois, start=1):
+        pos = poi["position"]
+        name = poi["poi"]["name"]
+        dist = poi.get("dist", 0) / 1000  # metres → km
+        addr = poi["address"]["freeformAddress"]
         folium.Marker(
-            [position['lat'], position['lon']],
-            popup=poi_name
-        ).add_to(m)
+            [pos["lat"], pos["lon"]],
+            tooltip=name,
+            popup=f"{name}<br>{addr}<br>{dist:.1f} km away",
+            icon=folium.Icon(color="red", icon="briefcase", prefix="fa")
+        ).add_to(poi_map)
 
-    st_folium(m, width=700, height=500)
+        st.markdown(f"**{idx}. {name}** – {addr} (_{dist:.1f} km_)")
 
-    st.markdown("---")
-    st.subheader("📄 Document Intelligence")
-    st.info("Insights from resumes and job descriptions will appear here.")
+    st_folium(poi_map, width=700, height=450)
 
-    st.markdown("---")
-    st.caption("Powered by Azure Maps, OpenAI, and more 🚀")
+# For standalone debugging
+if __name__ == "__main__":
+    run()
 
