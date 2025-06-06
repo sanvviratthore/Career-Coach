@@ -1,112 +1,76 @@
 import streamlit as st
-from azure.ai.formrecognizer import DocumentAnalysisClient
 from azure.core.credentials import AzureKeyCredential
+from azure.ai.formrecognizer import DocumentAnalysisClient
+from openai import AzureOpenAI
 
-# Azure Document Intelligence setup
-AZURE_FORM_RECOGNIZER_ENDPOINT = "https://careercoach-formrecognizer.cognitiveservices.azure.com/"
-AZURE_FORM_RECOGNIZER_KEY = "ElgiMCrTNyuLEyrikbAIjuQHUD9lzVrLT242zHAxdD4iTQewXj7aJQQJ99BFACYeBjFXJ3w3AAALACOGtUSC"  # Replace with your key
+# === Azure Credentials ===
+# Azure Document Intelligence
+doc_key = "ElgiMCrTNyuLEyrikbAIjuQHUD9lzVrLT242zHAxdD4iTQewXj7aJQQJ99BFACYeBjFXJ3w3AAALACOGtUSC"
+doc_endpoint = "https://careercoach-formrecognizer.cognitiveservices.azure.com/"
 
-client = DocumentAnalysisClient(
-    endpoint=AZURE_FORM_RECOGNIZER_ENDPOINT,
-    credential=AzureKeyCredential(AZURE_FORM_RECOGNIZER_KEY)
+# Azure OpenAI
+openai_key = "F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI"
+openai_endpoint = "https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/"
+deployment = "gpt-4.1"
+
+# === Setup Clients ===
+doc_client = DocumentAnalysisClient(
+    endpoint=doc_endpoint,
+    credential=AzureKeyCredential(doc_key)
 )
 
-def extract_text_from_doc(uploaded_file):
-    try:
-        poller = client.begin_analyze_document("prebuilt-document", document=uploaded_file)
-        result = poller.result()
-        full_text = ""
-        for page in result.pages:
-            for line in page.lines:
-                full_text += line.content + " "
-        return full_text.lower()
-    except Exception as e:
-        st.error(f"Failed to extract skills. Error: {e}")
-        return ""
+openai_client = AzureOpenAI(
+    api_key=openai_key,
+    azure_endpoint=openai_endpoint,
+    api_version="2024-12-01-preview"
+)
 
+# === Helper Functions ===
+def parse_resume(uploaded_file):
+    poller = doc_client.begin_analyze_document("prebuilt-read", document=uploaded_file)
+    result = poller.result()
+    full_text = " ".join([line.content for page in result.pages for line in page.lines])
+    return full_text
+
+def analyze_resume_content(resume_text):
+    prompt = f"""
+You are a career guidance expert. Analyze the following resume content:
+
+\"\"\"{resume_text}\"\"\"
+
+Provide:
+1. Key strengths based on skills and experience
+2. Gaps or weaknesses to improve
+3. A learning roadmap to address these gaps
+
+Respond clearly in a structured format.
+"""
+    response = openai_client.chat.completions.create(
+        model=deployment,
+        messages=[
+            {"role": "system", "content": "You are a helpful and insightful career coach."},
+            {"role": "user", "content": prompt}
+        ],
+        max_completion_tokens=1000,
+        temperature=0.7
+    )
+    return response.choices[0].message.content
+
+# === Streamlit Page ===
 def run():
-    st.title("🧠 Skill Builder")
-    st.markdown("Find skill-building resources tailored to your interests or resume gaps.")
+    st.title("🛠️ Skill Builder via Resume")
+    st.markdown("Upload your resume to receive personalized feedback on your strengths, weaknesses, and a learning roadmap.")
 
-    # Upload document for skill detection
-    uploaded_file = st.file_uploader("📄 Upload certificate, transcript or training doc (PDF)", type=["pdf"])
-    
-    extracted_skills = []
-    if uploaded_file:
-        with st.spinner("Analyzing document..."):
-            text = extract_text_from_doc(uploaded_file)
-            if text:
-                skill_keywords = ["python", "sql", "communication", "data structures", "machine learning"]
-                extracted_skills = [skill for skill in skill_keywords if skill in text]
-                
-                if extracted_skills:
-                    st.success(f"Extracted Skills: {', '.join(extracted_skills)}")
-                else:
-                    st.warning("No known skills were extracted from this document.")
+    uploaded_file = st.file_uploader("📄 Upload Resume (PDF)", type=["pdf"])
 
-    skills_resources = {
-        "Python": [
-            ("Beginner Course on Coursera", "https://www.coursera.org/specializations/python"),
-            ("Intermediate Practice on HackerRank", "https://www.hackerrank.com/domains/python"),
-            ("Build 2 Projects using this skill", None),
-            ("Add to Resume and LinkedIn", None),
-        ],
-        "Communication": [
-            ("Effective Communication Course on Coursera", "https://www.coursera.org/learn/active-listening-enhancing-communication-skills"),
-            ("Practice public speaking on Toastmasters", "https://www.toastmasters.org/find-a-club"),
-            ("Record yourself and review", None),
-            ("Add to Resume and LinkedIn", None),
-        ],
-        "SQL": [
-            ("SQL for Data Science on Coursera", "https://www.coursera.org/learn/sql-for-data-science"),
-            ("Practice SQL on LeetCode", "https://leetcode.com/problemset/database/"),
-            ("Build a small database project", None),
-            ("Add to Resume and LinkedIn", None),
-        ],
-        "Data Structures": [
-            ("Data Structures and Algorithms Specialization on Coursera", "https://www.coursera.org/specializations/data-structures-algorithms"),
-            ("Solve problems on GFG", "https://www.geeksforgeeks.org/explore?page=1&sprint=ca8ae412173dbd8346c26a0295d098fd&sortBy=submissions&sprint_name=Beginner%27s%20DSA%20Sheet&utm_source=geeksforgeeks&utm_medium=main_header&utm_campaign=practice_header"),
-            ("Implement 2 algorithms in projects", None),
-            ("Add to Resume and LinkedIn", None),
-        ],
-        "Machine Learning": [
-            ("Machine Learning by Andrew Ng on Coursera", "https://www.coursera.org/learn/machine-learning"),
-            ("Kaggle Competitions and Practice", "https://www.kaggle.com/competitions"),
-            ("Build ML projects and portfolio", None),
-            ("Add to Resume and LinkedIn", None),
-        ],
-    }
+    if uploaded_file and st.button("Analyze Resume"):
+        with st.spinner("Reading and analyzing your resume..."):
+            try:
+                resume_text = parse_resume(uploaded_file)
+                analysis = analyze_resume_content(resume_text)
 
-    # Let user choose skill or view suggestions
-    st.divider()
-    if extracted_skills:
-     st.markdown("### 📌 Skill-building suggestions from your document:")
+                st.markdown("### ✅ Career Analysis Result")
+                st.write(analysis)
 
-    for skill in extracted_skills:
-        # Safely try to match skill regardless of case
-        resource_key = next((k for k in skills_resources if k.lower() == skill.lower()), None)
-
-        if not resource_key:
-            st.warning(f"No learning path found for extracted skill: {skill}")
-            continue
-
-        st.subheader(f"📘 Learning Path for {resource_key}")
-        for item in skills_resources[resource_key]:
-            if item[1]:
-                st.markdown(f"- [{item[0]}]({item[1]})")
-            else:
-                st.markdown(f"- {item[0]}")
-
-
-
-
-    else:
-        selected_skill = st.selectbox("Or choose a skill to improve:", list(skills_resources.keys()))
-        if selected_skill:
-            st.subheader(f"📘 Learning Path for {selected_skill}")
-            for item in skills_resources[selected_skill]:
-                if item[1]:
-                    st.markdown(f"- [{item[0]}]({item[1]})")
-                else:
-                    st.markdown(f"- {item[0]}")
-
+            except Exception as e:
+                st.error(f"Something went wrong: {e}")
