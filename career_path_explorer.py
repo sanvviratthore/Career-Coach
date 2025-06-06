@@ -1,80 +1,52 @@
 import streamlit as st
+from openai import AzureOpenAI
+import requests
+
+client = AzureOpenAI(
+    api_key="F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI",
+    azure_endpoint="https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/",
+    api_version="2024-12-01-preview",
+)
+DEPLOYMENT = "gpt-4.1"
+
+def get_career_paths_and_companies(domain):
+    prompt = (
+        f"You are a career counselor. For the industry/domain '{domain}', please provide:\n"
+        f"1. Five career paths with relevant skills for each.\n"
+        f"2. A list of top companies globally that hire for roles in this domain.\n"
+        f"3. Add a line at the end that region-specific companies or information on startups and emerging organizations in that field, explore the Industry Trends feature of this app.\n"
+        f"Format your answer clearly with headings."
+    )
+    response = client.chat.completions.create(
+        model=DEPLOYMENT,
+        messages=[
+            {"role": "system", "content": "You are a helpful career counselor."},
+            {"role": "user", "content": prompt},
+        ],
+        max_completion_tokens=700,
+        temperature=0.7,
+    )
+    return response.choices[0].message.content
 
 def run():
-    st.title("📊 Career Path Explorer")
-    st.markdown("Explore career paths, salary trends, essential skills, and growth opportunities.")
+    st.title("🚀 Career Path Explorer")
 
-    careers = {
-        "Data Scientist": {
-            "salary": "₹12–30 LPA",
-            "skills": ["Python", "Statistics", "Machine Learning", "SQL", "Data Visualization"],
-            "growth": "🚀 High demand across industries",
-            "courses": {
-                "Coursera": "https://www.coursera.org/specializations/data-science-python",
-                "LinkedIn Learning": "https://www.linkedin.com/learning/topics/data-science",
-                "Udemy": "https://www.udemy.com/topic/data-science/"
-            }
-        },
-        "Software Engineer": {
-            "salary": "₹8–25 LPA",
-            "skills": ["Programming (Java, Python)", "Data Structures", "Algorithms", "System Design"],
-            "growth": "📈 Steady growth with tech evolution",
-            "courses": {
-                "Coursera": "https://www.coursera.org/specializations/java-programming",
-                "LinkedIn Learning": "https://www.linkedin.com/learning/software-development",
-                "Udemy": "https://www.udemy.com/topic/software-engineering/"
-            }
-        },
-        "Cybersecurity Analyst": {
-            "salary": "₹7–20 LPA",
-            "skills": ["Network Security", "Ethical Hacking", "Risk Management", "Compliance"],
-            "growth": "🚀 Growing importance due to cyber threats",
-            "courses": {
-                "Coursera": "https://www.coursera.org/specializations/cyber-security",
-                "LinkedIn Learning": "https://www.linkedin.com/learning/topics/cybersecurity",
-                "Udemy": "https://www.udemy.com/topic/cyber-security/"
-            }
-        },
-        "UX Designer": {
-            "salary": "₹5–15 LPA",
-            "skills": ["User Research", "Wireframing", "Prototyping", "Design Tools (Figma, Adobe XD)"],
-            "growth": "📈 Increasing focus on user experience",
-            "courses": {
-                "Coursera": "https://www.coursera.org/specializations/ui-ux-design",
-                "LinkedIn Learning": "https://www.linkedin.com/learning/ux-design",
-                "Udemy": "https://www.udemy.com/topic/ux-design/"
-            }
-        },
-        "Mechanical Engineer": {
-            "salary": "₹4–12 LPA",
-            "skills": ["CAD", "Thermodynamics", "Manufacturing Processes", "Material Science"],
-            "growth": "📉 Moderate, varies by industry",
-            "courses": {
-                "Coursera": "https://www.coursera.org/courses?query=mechanical%20engineering",
-                "LinkedIn Learning": "https://www.linkedin.com/learning/topics/mechanical-engineering",
-                "Udemy": "https://www.udemy.com/topic/mechanical-engineering/"
-            }
-        }
-    }
+    domain = st.text_input(
+        "Enter an Industry/Domain (e.g., AI, Cloud, Cybersecurity):",
+        key="domain_input"
+    )
 
-    choice = st.selectbox("Choose a career path to explore:", list(careers.keys()))
+    if domain.strip():
+        with st.spinner("Fetching career paths and top companies..."):
+            try:
+                career_info = get_career_paths_and_companies(domain.strip())
+            except Exception as e:
+                st.error(f"Error fetching career info: {e}")
+                career_info = None
 
-    if choice:
-        career = careers[choice]
-        st.subheader(f"🔍 Details for {choice}")
+        if career_info:
+            st.markdown("### Career Paths and Hiring Companies")
+            st.write(career_info)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"**Average Salary:** {career['salary']}")
-            st.markdown("**Growth Outlook:**")
-            st.markdown(f"> {career['growth']}")
-
-        with col2:
-            st.markdown("**Top Skills:**")
-            for skill in career['skills']:
-                st.markdown(f"- {skill}")
-
-        st.markdown("**Suggested Courses:**")
-        for platform, url in career['courses'].items():
-            st.markdown(f"- [{platform}]({url})")
-
+if __name__ == "__main__":
+    run()

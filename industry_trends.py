@@ -1,39 +1,123 @@
 import streamlit as st
+import requests
+import folium
+from openai import AzureOpenAI
+from streamlit_folium import st_folium
+
+# Your Azure Maps and OpenAI config
+azure_maps_key = "3pdOV7PLWQOOLunAlvdKIlRGdj0g7qPG6UgsnkO19Ge0VjSEouafJQQJ99BFACYeBjFAfOwiAAAgAZMP49Wn"
+azure_openai_endpoint = "https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/"
+azure_openai_api_key = "F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI"
+azure_openai_model = "gpt-4.1"
+azure_openai_deployment = "gpt-4.1"
+
+# Initialize Azure OpenAI client
+client = AzureOpenAI(
+    api_key=azure_openai_api_key,
+    azure_endpoint=azure_openai_endpoint,
+    api_version="2024-12-01-preview",
+)
+
+def search_place(query):
+    url = (
+        f"https://atlas.microsoft.com/search/address/json?"
+        f"subscription-key={azure_maps_key}&api-version=1.0&query={query}"
+    )
+    resp = requests.get(url)
+    if resp.status_code == 200:
+        data = resp.json()
+        if data["results"]:
+            top = data["results"][0]
+            pos = top["position"]
+            return pos["lat"], pos["lon"], top["address"]["freeformAddress"]
+    return None, None, None
+
+# Function to get industry trends from Azure OpenAI
+def get_industry_trends(lat, lon):
+    prompt = (
+        f"You are a market analyst. Provide a brief analysis of industry trends "
+        f"in the area with latitude {lat} and longitude {lon}. "
+        f"Include companies, tech, job market, opportunities."
+    )
+    response = client.chat.completions.create(
+        model=azure_openai_deployment,
+        messages=[
+            {"role": "system", "content": "You are a helpful industry trends assistant."},
+            {"role": "user", "content": prompt},
+        ],
+        max_completion_tokens=800,
+        temperature=0.7,
+    )
+    return response.choices[0].message.content
 
 def run():
-    st.title("💡 Industry Trends")
-    st.markdown("Stay updated with the latest trends and insights across various tech domains.")
+    st.title("🌍 Industry Trends Explorer with Search & Click Map")
 
-    selected_domain = st.selectbox(
-        "Select a domain to explore trends:",
-        ["AI", "Web Development", "Cybersecurity", "Data Analytics"]
-    )
+    # Session state defaults
+    if "lat" not in st.session_state:
+        st.session_state.lat = 28.6139
+    if "lon" not in st.session_state:
+        st.session_state.lon = 77.2090
+    if "address" not in st.session_state:
+        st.session_state.address = "New Delhi, India"
+    if "trends" not in st.session_state:
+        st.session_state.trends = ""
+    if "clicked" not in st.session_state:
+        st.session_state.clicked = False
 
-    if selected_domain:
-        st.subheader(f"🔎 Latest Trends in {selected_domain}")
-        
-        trends = {
-            "AI": [
-                "Generative AI is reshaping content creation.",
-                "AI-driven automation is increasing efficiency.",
-                "Ethical AI and bias mitigation are gaining focus."
-            ],
-            "Web Development": [
-                "Web3 and blockchain integrations are rising.",
-                "Progressive Web Apps (PWAs) are becoming mainstream.",
-                "Jamstack architecture improves performance and security."
-            ],
-            "Cybersecurity": [
-                "Focus on zero-trust security models.",
-                "Rise in AI-powered threat detection.",
-                "Increased emphasis on privacy and data protection."
-            ],
-            "Data Analytics": [
-                "Real-time dashboards and data visualization are in demand.",
-                "Adoption of augmented analytics tools.",
-                "Growing use of predictive analytics for business decisions."
-            ]
-        }
+    # Search box for place
+    place_search = st.text_input("Search for a place:", key="place_search_input")
 
-        for point in trends.get(selected_domain, []):
-            st.markdown(f"- {point}")
+    if place_search:
+        lat, lon, address = search_place(place_search)
+        if lat and lon:
+            st.session_state.lat = lat
+            st.session_state.lon = lon
+            st.session_state.address = address
+            st.session_state.clicked = True
+        else:
+            st.warning("Place not found, try another query.")
+
+    # Folium map setup
+    m = folium.Map(location=[st.session_state.lat, st.session_state.lon], zoom_start=12)
+
+    # Add marker if clicked/searched
+    if st.session_state.clicked:
+        folium.Marker(
+            location=[st.session_state.lat, st.session_state.lon],
+            popup=st.session_state.address,
+            tooltip="Selected location",
+            icon=folium.Icon(color="red"),
+        ).add_to(m)
+
+    # Add click handler - update lat/lon on map click
+    click_data = st_folium(m, height=500, width=700)
+
+    if click_data and click_data.get("last_clicked"):
+        clicked_lat = click_data["last_clicked"]["lat"]
+        clicked_lon = click_data["last_clicked"]["lng"]
+        st.session_state.lat = clicked_lat
+        st.session_state.lon = clicked_lon
+        st.session_state.address = f"Lat: {clicked_lat:.5f}, Lon: {clicked_lon:.5f}"
+        st.session_state.clicked = True
+
+    # Button to fetch industry trends
+    if st.button("Get Industry Trends"):
+        if not st.session_state.clicked:
+            st.warning("Please select a location by searching or clicking on the map.")
+        else:
+            with st.spinner("Fetching industry trends..."):
+                try:
+                    st.session_state.trends = get_industry_trends(
+                        st.session_state.lat, st.session_state.lon
+                    )
+                except Exception as e:
+                    st.error(f"Error: {e}")
+
+    # Show industry trends
+    if st.session_state.trends:
+        st.markdown(f"### 📈 Industry Trends near {st.session_state.address}")
+        st.write(st.session_state.trends)
+
+if __name__ == "__main__":
+    run()
