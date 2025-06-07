@@ -11,6 +11,7 @@ doc_endpoint = st.secrets["doc_endpoint"]
 openai_key = st.secrets["openai_key"]
 openai_endpoint = st.secrets["openai_endpoint"]
 deployment = st.secrets["deployment"]
+api_version = st.secrets["azure_openai_api_version"]
 
 doc_client = DocumentAnalysisClient(
     endpoint=doc_endpoint,
@@ -20,7 +21,7 @@ doc_client = DocumentAnalysisClient(
 openai_client = AzureOpenAI(
     api_key=openai_key,
     azure_endpoint=openai_endpoint,
-    api_version="2024-12-01-preview",
+    api_version=api_version,
 )
 
 def parse_resume(uploaded_file):

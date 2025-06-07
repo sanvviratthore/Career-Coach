@@ -8,11 +8,12 @@ azure_maps_key = st.secrets["azure_maps_key"]
 azure_openai_endpoint = st.secrets["azure_openai_endpoint"]
 azure_openai_api_key = st.secrets["azure_openai_api_key"]
 azure_openai_deployment = st.secrets["azure_openai_deployment"]
+azure_openai_api_version = st.secrets["azure_openai_api_version"]
 
 client = AzureOpenAI(
     api_key=azure_openai_api_key,
     azure_endpoint=azure_openai_endpoint,
-    api_version="2024-12-01-preview",
+    api_version=azure_openai_api_version,
 )
 
 def search_place(query):
