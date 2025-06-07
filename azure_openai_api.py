@@ -1,9 +1,10 @@
+import streamlit as st
 from openai import AzureOpenAI
 
-endpoint = "https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/"
-deployment = "gpt-35-turbo"  # Your deployment name here
-subscription_key = "F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI"  # Replace this!
-api_version = "2024-12-01-preview"  # or your supported version
+endpoint = st.secrets["openai_endpoint"]
+deployment = st.secrets["deployment"] 
+subscription_key = st.secrets["openai_key"]
+api_version = st.secrets.get("azure_openai_api_version", "2024-12-01-preview")  
 
 client = AzureOpenAI(
     api_key=subscription_key,
@@ -23,6 +24,4 @@ def ask_azure_openai(messages):
         return response.choices[0].message.content
     except Exception as e:
         return f"Error: {e}"
-
-
-
+    
