@@ -34,7 +34,7 @@ def run():
     with st.container():
         st.markdown('<div class="centered-container">', unsafe_allow_html=True)
 
-        lottie_json = load_lottiefile("animations\Animation - 1749284783217.json")  
+        lottie_json = load_lottiefile("animations/Animation - 1749284783217.json")  
 
         st_lottie(lottie_json, height=150, key="course-animation")
 
