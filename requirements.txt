@@ -7,3 +7,4 @@ python-dotenv
 pandas
 folium
 streamlit_folium
+matplotlib
