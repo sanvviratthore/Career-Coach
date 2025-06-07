@@ -6,8 +6,9 @@ from streamlit_lottie import st_lottie
 client = AzureOpenAI(
     api_key=st.secrets["azure_openai_api_key"],
     azure_endpoint=st.secrets["azure_openai_endpoint"],
-    api_version="2024-12-01-preview",
+    api_version=st.secrets["azure_openai_api_version"],
 )
+
 DEPLOYMENT = st.secrets["azure_openai_deployment"]
 
 def generate_questions(interview_type: str) -> list[str]:

@@ -1,3 +1,4 @@
 .streamlit/secrets.toml
 __pycache__/
 Career-Coach-backup.git
+venv/
