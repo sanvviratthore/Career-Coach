@@ -1,6 +1,7 @@
 import streamlit as st
 from openai import AzureOpenAI
-import requests
+import json
+from streamlit_lottie import st_lottie
 
 client = AzureOpenAI(
     api_key="F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI",
@@ -8,6 +9,12 @@ client = AzureOpenAI(
     api_version="2024-12-01-preview",
 )
 DEPLOYMENT = "gpt-4.1"
+
+def load_lottiefile(filepath: str):
+    with open(filepath, "r") as f:
+        return json.load(f)
+
+lottie_career = load_lottiefile("animations\Animation - 1749285017326.json") 
 
 def get_career_paths_and_companies(domain):
     prompt = (
@@ -31,12 +38,50 @@ def get_career_paths_and_companies(domain):
 def run():
     st.title("🚀 Career Path Explorer")
 
-    domain = st.text_input(
-        "Enter an Industry/Domain (e.g., AI, Cloud, Cybersecurity):",
-        key="domain_input"
+    st.markdown(
+        """
+        <style>
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            margin-top: 20px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+        .input-area {
+            max-width: 400px;
+            flex: 1 1 400px;
+        }
+        .animation-area {
+            max-width: 300px;
+            flex: 1 1 300px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
     )
 
-    if domain.strip():
+    with st.form(key="domain_form"):
+        st.markdown('<div class="container">', unsafe_allow_html=True)
+        
+        with st.container():
+            st.markdown('<div class="input-area">', unsafe_allow_html=True)
+            domain = st.text_input(
+                "Enter an Industry/Domain (e.g., AI, Cloud, Cybersecurity):",
+                key="domain_input"
+            )
+            submit = st.form_submit_button("Explore Career Paths")
+            st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown('<div class="animation-area">', unsafe_allow_html=True)
+        st_lottie(lottie_career, height=250, key="career_lottie")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    if submit and domain.strip():
         with st.spinner("Fetching career paths and top companies..."):
             try:
                 career_info = get_career_paths_and_companies(domain.strip())
@@ -46,7 +91,7 @@ def run():
 
         if career_info:
             st.markdown("### Career Paths and Hiring Companies")
-            st.write(career_info)
+            st.markdown(career_info) 
 
 if __name__ == "__main__":
     run()
