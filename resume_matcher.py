@@ -7,8 +7,8 @@ from azure.core.credentials import AzureKeyCredential
 import json
 from streamlit_lottie import st_lottie
 
-AZURE_FORM_RECOGNIZER_ENDPOINT = "https://careercoach-formrecognizer.cognitiveservices.azure.com/"
-AZURE_FORM_RECOGNIZER_KEY = "ElgiMCrTNyuLEyrikbAIjuQHUD9lzVrLT242zHAxdD4iTQewXj7aJQQJ99BFACYeBjFXJ3w3AAALACOGtUSC"
+AZURE_FORM_RECOGNIZER_ENDPOINT = st.secrets["azure_form_recognizer_endpoint"]
+AZURE_FORM_RECOGNIZER_KEY = st.secrets["azure_form_recognizer_key"]
 
 client = DocumentAnalysisClient(
     endpoint=AZURE_FORM_RECOGNIZER_ENDPOINT,

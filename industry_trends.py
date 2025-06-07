@@ -4,11 +4,10 @@ import folium
 from openai import AzureOpenAI
 from streamlit_folium import st_folium
 
-azure_maps_key = "3pdOV7PLWQOOLunAlvdKIlRGdj0g7qPG6UgsnkO19Ge0VjSEouafJQQJ99BFACYeBjFAfOwiAAAgAZMP49Wn"
-azure_openai_endpoint = "https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/"
-azure_openai_api_key = "F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI"
-azure_openai_model = "gpt-4.1"
-azure_openai_deployment = "gpt-4.1"
+azure_maps_key = st.secrets["azure_maps_key"]
+azure_openai_endpoint = st.secrets["azure_openai_endpoint"]
+azure_openai_api_key = st.secrets["azure_openai_api_key"]
+azure_openai_deployment = st.secrets["azure_openai_deployment"]
 
 client = AzureOpenAI(
     api_key=azure_openai_api_key,
@@ -111,4 +110,3 @@ def run():
 
 if __name__ == "__main__":
     run()
-    

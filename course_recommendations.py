@@ -3,16 +3,13 @@ from openai import AzureOpenAI
 import json
 from streamlit_lottie import st_lottie
 
-endpoint = "https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/"
-deployment = "gpt-4.1"  
-api_version = "2024-12-01-preview"
-subscription_key = "F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI"  
-
 client = AzureOpenAI(
-    api_key=subscription_key,
-    api_version=api_version,
-    azure_endpoint=endpoint
+    api_key=st.secrets["azure_openai_api_key"],
+    azure_endpoint=st.secrets["azure_openai_endpoint"],
+    api_version=st.secrets["azure_openai_api_version"],
 )
+
+deployment = st.secrets["azure_openai_deployment"]
 
 def load_lottiefile(filepath: str):
     with open(filepath, "r") as f:

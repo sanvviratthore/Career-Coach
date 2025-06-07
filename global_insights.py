@@ -3,13 +3,13 @@ import folium
 from streamlit_folium import st_folium
 import requests
 
-AZURE_MAPS_KEY = "3pdOV7PLWQOOLunAlvdKIlRGdj0g7qPG6UgsnkO19Ge0VjSEouafJQQJ99BFACYeBjFAfOwiAAAgAZMP49Wn"
+azure_maps_key = st.secrets["azure_maps_key"]
 
 def geocode_place(place: str):
     """Return (lat, lon, formatted_address) for a place string."""
     url = "https://atlas.microsoft.com/search/address/json"
     params = {
-        "subscription-key": AZURE_MAPS_KEY,
+        "subscription-key": azure_maps_key,
         "api-version": "1.0",
         "query": place,
         "limit": 1
@@ -28,7 +28,7 @@ def search_job_locations(lat: float, lon: float, query: str = "job", limit: int 
     """Return POIs for given query around lat/lon."""
     url = "https://atlas.microsoft.com/search/poi/json"
     params = {
-        "subscription-key": AZURE_MAPS_KEY,
+        "subscription-key": azure_maps_key,
         "api-version": "1.0",
         "lat": lat,
         "lon": lon,

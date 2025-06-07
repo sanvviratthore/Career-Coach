@@ -2,19 +2,19 @@ import streamlit as st
 import requests
 from openai import AzureOpenAI
 
-AZURE_OPENAI_API_KEY = "F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI"
-AZURE_OPENAI_ENDPOINT = "https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/"
-AZURE_OPENAI_MODEL = "gpt-4.1"  
-AZURE_OPENAI_API_VERSION = "2024-12-01-preview"
+AZURE_OPENAI_API_KEY = st.secrets["azure_openai_api_key"]
+AZURE_OPENAI_ENDPOINT = st.secrets["azure_openai_endpoint"]
+AZURE_OPENAI_MODEL = st.secrets["azure_openai_model"]
+AZURE_OPENAI_API_VERSION = st.secrets["azure_openai_api_version"]
+
+AZURE_MAPS_KEY = st.secrets["azure_maps_key"]
+AZURE_MAPS_SEARCH_URL = st.secrets["azure_maps_search_url"]
 
 client = AzureOpenAI(
     api_key=AZURE_OPENAI_API_KEY,
     azure_endpoint=AZURE_OPENAI_ENDPOINT,
     api_version=AZURE_OPENAI_API_VERSION,
 )
-
-AZURE_MAPS_KEY = "3pdOV7PLWQOOLunAlvdKIlRGdj0g7qPG6UgsnkO19Ge0VjSEouafJQQJ99BFACYeBjFAfOwiAAAgAZMP49Wn"
-AZURE_MAPS_SEARCH_URL = "https://atlas.microsoft.com/search/address/json"
 
 def geocode_location(location: str):
     """Use Azure Maps Search API to convert location text to lat/lon."""

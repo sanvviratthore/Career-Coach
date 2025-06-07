@@ -4,11 +4,11 @@ import datetime, re, json
 from streamlit_lottie import st_lottie
 
 client = AzureOpenAI(
-    api_key="F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI",
-    azure_endpoint="https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/",
+    api_key=st.secrets["azure_openai_api_key"],
+    azure_endpoint=st.secrets["azure_openai_endpoint"],
     api_version="2024-12-01-preview",
 )
-DEPLOYMENT = "gpt-4.1"
+DEPLOYMENT = st.secrets["azure_openai_deployment"]
 
 def generate_questions(interview_type: str) -> list[str]:
     prompt = f"""You are an HR professional. Generate **exactly ten** {interview_type.lower()} interview questions suitable for a pre-final and

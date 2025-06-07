@@ -5,12 +5,12 @@ from openai import AzureOpenAI
 import json
 from streamlit_lottie import st_lottie
 
-doc_key = "ElgiMCrTNyuLEyrikbAIjuQHUD9lzVrLT242zHAxdD4iTQewXj7aJQQJ99BFACYeBjFXJ3w3AAALACOGtUSC"
-doc_endpoint = "https://careercoach-formrecognizer.cognitiveservices.azure.com/"
+doc_key = st.secrets["doc_key"]
+doc_endpoint = st.secrets["doc_endpoint"]
 
-openai_key = "F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI"
-openai_endpoint = "https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/"
-deployment = "gpt-4.1"
+openai_key = st.secrets["openai_key"]
+openai_endpoint = st.secrets["openai_endpoint"]
+deployment = st.secrets["deployment"]
 
 doc_client = DocumentAnalysisClient(
     endpoint=doc_endpoint,
@@ -20,7 +20,7 @@ doc_client = DocumentAnalysisClient(
 openai_client = AzureOpenAI(
     api_key=openai_key,
     azure_endpoint=openai_endpoint,
-    api_version="2024-12-01-preview"
+    api_version="2024-12-01-preview",
 )
 
 def parse_resume(uploaded_file):
