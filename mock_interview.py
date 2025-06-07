@@ -50,7 +50,7 @@ def load_lottie(filepath: str):
     with open(filepath, "r", encoding="utf-8") as f:
         return json.load(f)
 
-lottie_json = load_lottie("animations\Animation - 1749286005992.json")      
+lottie_json = load_lottie("animations/Animation - 1749286005992.json")      
 
 def run():
     st.title("🎤 Mock Interview Prep")
