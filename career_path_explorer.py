@@ -15,7 +15,7 @@ def load_lottiefile(filepath: str):
     with open(filepath, "r") as f:
         return json.load(f)
 
-lottie_career = load_lottiefile("animations\Animation - 1749285017326.json") 
+lottie_career = load_lottiefile("animations/Animation - 1749285017326.json")
 
 def get_career_paths_and_companies(domain):
     prompt = (
