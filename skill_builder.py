@@ -58,7 +58,7 @@ def load_lottiefile(filepath: str):
     with open(filepath, "r") as f:
         return json.load(f)
 
-lottie_resume = load_lottiefile("animations\Animation - 1749285315567.json") 
+lottie_resume = load_lottiefile("animations/Animation - 1749285315567.json") 
 
 def run():
     st.title("🛠️ Skill Builder via Resume")
