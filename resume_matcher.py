@@ -4,10 +4,9 @@ import re
 import matplotlib.pyplot as plt
 from azure.ai.formrecognizer import DocumentAnalysisClient
 from azure.core.credentials import AzureKeyCredential
+import json
+from streamlit_lottie import st_lottie
 
-# Your existing imports and code ...
-
-# Azure Document Intelligence config
 AZURE_FORM_RECOGNIZER_ENDPOINT = "https://careercoach-formrecognizer.cognitiveservices.azure.com/"
 AZURE_FORM_RECOGNIZER_KEY = "ElgiMCrTNyuLEyrikbAIjuQHUD9lzVrLT242zHAxdD4iTQewXj7aJQQJ99BFACYeBjFXJ3w3AAALACOGtUSC"
 
@@ -16,82 +15,94 @@ client = DocumentAnalysisClient(
     credential=AzureKeyCredential(AZURE_FORM_RECOGNIZER_KEY)
 )
 
-def analyze_resume_with_azure(pdf_bytes):
-    poller = client.begin_analyze_document(
-        "prebuilt-document",
-        document=pdf_bytes
-    )
-    result = poller.result()
+def load_lottiefile(filepath: str):
+    with open(filepath, "r", encoding="utf-8") as f:
+        return json.load(f)
 
+lottie_resume = load_lottiefile("animations/Animation - 1749283614215.json")  
+
+@st.cache_data
+def load_data():
+    return pd.read_csv('job_skills.csv')
+
+def analyze_resume_with_azure(pdf_bytes):
+    poller = client.begin_analyze_document("prebuilt-document", document=pdf_bytes)
+    result = poller.result()
     full_text = ""
     for page in result.pages:
-        # page.lines is a list of line objects; extract their content strings
         page_text = " ".join([line.content for line in page.lines])
         full_text += page_text + " "
-
-    # Convert entire text to lowercase once all pages are processed
     return full_text.lower()
-
 
 def run():
     st.title("📄 Resume Skill Matcher")
+    st.subheader("For students and working professionals")
+    st.markdown("Upload your resume and see how well it aligns with the skills required for your desired job roles.")
 
-    @st.cache_data
-    def load_data():
-        return pd.read_csv('job_skills.csv')
+    col1, col2 = st.columns([3, 2])
+    with col2:
+        st_lottie(lottie_resume, height=250, key="resume")
 
-    # Existing job title extraction and UI code ...
-    df_jobs = load_data()
-    df_jobs['job_title'] = df_jobs['job_link'].apply(
-        lambda url: re.sub(r'-\d+.*$', '', url.split('/view/')[1]).replace('-', ' ').title() if '/view/' in url else "Unknown Job"
-    )
+    with col1:
+        df_jobs = load_data()
 
-    job_titles = df_jobs['job_title'].unique()[:100]
-    selected_job_title = st.selectbox("Select a job:", job_titles)
+        df_jobs['job_title'] = df_jobs['job_link'].apply(
+            lambda url: re.sub(r'-\d+.*$', '', url.split('/view/')[1]).replace('-', ' ').title()
+            if '/view/' in url else "Unknown Job"
+        )
 
-    selected_job_row = df_jobs[df_jobs['job_title'] == selected_job_title].iloc[0]
-    skills_list = [skill.strip().lower() for skill in selected_job_row['job_skills'].split(',') if skill.strip()]
+        tech_keywords = ['engineer', 'developer', 'analyst', 'scientist', 'architect']
+        job_filter = st.radio("🎯 Filter Jobs:", ["All Jobs", "Tech Only"])
+        filtered_jobs = df_jobs[df_jobs['job_title'].str.lower().str.contains('|'.join(tech_keywords))] \
+                        if job_filter == "Tech Only" else df_jobs
 
-    st.markdown(f"### Skills required for **{selected_job_title}**")
-    st.write(", ".join(skills_list))
+        job_titles = filtered_jobs['job_title'].unique()[:100]
+        selected_job_title = st.selectbox("💼 Select a Job Title:", job_titles)
 
-    uploaded_file = st.file_uploader("Upload your resume (PDF only)", type=["pdf"])
+        selected_row = filtered_jobs[filtered_jobs['job_title'] == selected_job_title].iloc[0]
+        skills_list = [skill.strip().lower() for skill in selected_row['job_skills'].split(',') if skill.strip()]
 
-    if uploaded_file:
-        try:
-            pdf_bytes = uploaded_file.read()
-            resume_text = analyze_resume_with_azure(pdf_bytes)
+        st.markdown(f"### ✅ Skills Required for **{selected_job_title}**")
+        st.write(", ".join(skills_list))
 
-            with st.expander("Preview extracted resume text (first 3000 chars)"):
-                st.text(resume_text[:3000] + ("..." if len(resume_text) > 3000 else ""))
+        uploaded_file = st.file_uploader("📎 Upload your Resume (PDF only)", type=["pdf"])
 
-            matched = [skill for skill in skills_list if skill in resume_text]
-            missing = [skill for skill in skills_list if skill not in resume_text]
+        if uploaded_file:
+            try:
+                pdf_bytes = uploaded_file.read()
+                resume_text = analyze_resume_with_azure(pdf_bytes)
 
-            st.markdown(f"**Matched Skills ({len(matched)}):** {', '.join(matched) if matched else 'None'}")
-            st.markdown(f"**Skills to Improve ({len(missing)}):** {', '.join(missing) if missing else 'None'}")
+                with st.expander("🔍 Preview Extracted Resume Text (First 3000 characters)"):
+                    st.text(resume_text[:3000] + ("..." if len(resume_text) > 3000 else ""))
 
-            def show_skill_gap_chart(matched, missing):
-                labels = ['Matched Skills', 'Missing Skills']
-                sizes = [len(matched), len(missing)]
-                colors = ['#4CAF50', '#FF5722']
+                matched = [skill for skill in skills_list if skill in resume_text]
+                missing = [skill for skill in skills_list if skill not in resume_text]
 
-                fig, ax = plt.subplots()
-                wedges, texts, autotexts = ax.pie(
-                    sizes,
-                    labels=labels,
-                    autopct='%1.1f%%',
-                    startangle=90,
-                    colors=colors,
-                    textprops={'color':"w"}
-                )
-                ax.axis('equal')
-                plt.setp(autotexts, size=14, weight="bold")
-                st.pyplot(fig)
+                st.success(f"✅ Matched Skills ({len(matched)}):")
+                st.markdown(", ".join(matched) if matched else "None")
 
-            show_skill_gap_chart(matched, missing)
+                st.error(f"📌 Skills to Improve ({len(missing)}):")
+                st.markdown(", ".join(missing) if missing else "None")
 
-        except Exception as e:
-            st.error(f"Failed to analyze resume. Error: {e}")
+                def show_skill_gap_chart(matched, missing):
+                    labels = ['Matched Skills', 'Missing Skills']
+                    sizes = [len(matched), len(missing)]
+                    colors = ['#4CAF50', '#FF5722']
 
+                    fig, ax = plt.subplots()
+                    wedges, _, autotexts = ax.pie(
+                        sizes,
+                        labels=labels,
+                        autopct='%1.1f%%',
+                        startangle=90,
+                        colors=colors,
+                        textprops={'color': "w"}
+                    )
+                    ax.axis('equal')
+                    plt.setp(autotexts, size=14, weight="bold")
+                    st.pyplot(fig)
 
+                show_skill_gap_chart(matched, missing)
+
+            except Exception as e:
+                st.error(f"❌ Failed to analyze resume. Error: {e}")

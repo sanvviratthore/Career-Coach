@@ -2,10 +2,9 @@ import streamlit as st
 import requests
 from openai import AzureOpenAI
 
-# --- Azure OpenAI Config ---
 AZURE_OPENAI_API_KEY = "F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI"
 AZURE_OPENAI_ENDPOINT = "https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/"
-AZURE_OPENAI_MODEL = "gpt-4.1"  # your deployment name
+AZURE_OPENAI_MODEL = "gpt-4.1"  
 AZURE_OPENAI_API_VERSION = "2024-12-01-preview"
 
 client = AzureOpenAI(
@@ -14,7 +13,6 @@ client = AzureOpenAI(
     api_version=AZURE_OPENAI_API_VERSION,
 )
 
-# --- Azure Maps Config ---
 AZURE_MAPS_KEY = "3pdOV7PLWQOOLunAlvdKIlRGdj0g7qPG6UgsnkO19Ge0VjSEouafJQQJ99BFACYeBjFAfOwiAAAgAZMP49Wn"
 AZURE_MAPS_SEARCH_URL = "https://atlas.microsoft.com/search/address/json"
 
@@ -50,7 +48,7 @@ def get_hackathons_from_openai(location: str) -> str:
     return response.choices[0].message.content.strip()
 
 def run():
-    st.title("📅 Dynamic Hackathons Near You")
+    st.title("📅 Hackathons Near You")
 
     location_input = st.text_input("Enter your location (city, region, or country):", value="India")
 
@@ -80,4 +78,3 @@ def run():
 
 if __name__ == "__main__":
     run()
-

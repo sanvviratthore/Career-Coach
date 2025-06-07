@@ -1,113 +1,106 @@
 import streamlit as st
 from openai import AzureOpenAI
-import datetime
-import re
-
-# ====== Azure OpenAI credentials ======
-openai_key      = "F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI"
-openai_endpoint = "https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/"
-deployment      = "gpt-4.1"                       # your deployed model name
-api_version     = "2024-12-01-preview"
+import datetime, re, json
+from streamlit_lottie import st_lottie
 
 client = AzureOpenAI(
-    api_key=openai_key,
-    azure_endpoint=openai_endpoint,
-    api_version=api_version,
+    api_key="F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI",
+    azure_endpoint="https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/",
+    api_version="2024-12-01-preview",
 )
+DEPLOYMENT = "gpt-4.1"
 
-# ---------- GPT wrappers ----------
 def generate_questions(interview_type: str) -> list[str]:
-    """Ask GPT for five interview questions of the selected type."""
-    prompt = f"""
-You are an HR professional. Generate **exactly five** {interview_type.lower()} interview questions suitable for a final-year engineering student.
-Return them as a plain numbered list.
-
-Examples:
-1. ...
-2. ...
-"""
+    prompt = f"""You are an HR professional. Generate **exactly ten** {interview_type.lower()} interview questions suitable for a pre-final and
+final-year computer-science/IT engineering student. Return them as a plain numbered list.
+Also make sure you try to give different questions every time they ask for generating questions.
+Also make sure to give 0/10 if the user doesn't input anything and just submits their answer."""
     resp = client.chat.completions.create(
-        model=deployment,
+        model=DEPLOYMENT,
         messages=[
             {"role": "system", "content": "You are a professional interviewer."},
-            {"role": "user", "content": prompt}
-        ],
-        max_completion_tokens=300,
-        temperature=0.8,
-    )
+            {"role": "user", "content": prompt}],
+        max_tokens=300, temperature=0.8)
     q_text = resp.choices[0].message.content.strip()
+    return [re.sub(r"^\d+\.\s*", "", ln).strip()
+            for ln in q_text.splitlines() if ln.strip()]
 
-    # extract numbered lines (1., 2., …)
-    return [re.sub(r"^\d+\.\s*", "", line).strip()
-            for line in q_text.splitlines()
-            if line.strip()]
+def get_feedback(questions, answers) -> str:
+    qa = "\n\n".join(f"Q{i+1}: {q}\nA{i+1}: {a}"
+                     for i, (q, a) in enumerate(zip(questions, answers)))
+    prompt = f"""You are an expert technical interviewer. Review the Q&A and give strengths, areas to improve,
+and a rating out of 10 for each answer.
 
-def get_feedback(questions: list[str], answers: list[str]) -> str:
-    """Send Q&A pairs to GPT and receive constructive feedback."""
-    qa_blocks = "\n\n".join(
-        f"Q{idx+1}: {q}\nA{idx+1}: {a}" for idx, (q, a) in enumerate(zip(questions, answers))
-    )
-    prompt = f"""
-You are an expert technical interviewer. Review the following question-answer pairs and give **constructive, specific feedback** for each answer (strengths, areas to improve, and a brief rating out of 10).
+{qa}
 
-{qa_blocks}
-
-Return feedback in this exact format:
-
-Question 1 Feedback (rating x/10): …
-Question 2 Feedback (rating x/10): …
-...
+Return exactly:
+Question 1 Feedback (rating x/10): ...
+Question 2 Feedback (rating x/10): ...
 """
     resp = client.chat.completions.create(
-        model=deployment,
+        model=DEPLOYMENT,
         messages=[
             {"role": "system", "content": "You are a seasoned interviewer providing actionable feedback."},
-            {"role": "user", "content": prompt}
-        ],
-        max_completion_tokens=800,
-        temperature=0.7,
-    )
+            {"role": "user", "content": prompt}],
+        max_tokens=800, temperature=0.7)
     return resp.choices[0].message.content.strip()
 
-# ---------- Streamlit page ----------
+def load_lottie(filepath: str):
+    with open(filepath, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+lottie_json = load_lottie("animations\Animation - 1749286005992.json")      
+
 def run():
     st.title("🎤 Mock Interview Prep")
     st.markdown(
         "Practice common interview questions, type your answers, and receive AI-powered feedback."
     )
 
-    # Select interview type
-    interview_type = st.radio("Choose interview focus:",
-                              ["Technical", "Behavioral"], horizontal=True)
+    st.markdown("""
+    <style>
+    .container {display:flex;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap;margin-bottom:1.5rem;}
+    .input-box {max-width:380px;flex:1 1 380px;}
+    .lottie-box{max-width:260px;flex:1 1 260px;}
+    .stButton>button{width:100%}
+    </style>
+    """, unsafe_allow_html=True)
 
-    # Generate questions button
-    if st.button("Generate Questions", type="primary"):
-        st.session_state.questions  = generate_questions(interview_type)
-        st.session_state.start_time = datetime.datetime.now()
-        st.session_state.feedback   = None
+    st.markdown('<div class="container">', unsafe_allow_html=True)
 
-    # If questions already generated, show them with answer inputs
+    with st.container():
+        st.markdown('<div class="input-box">', unsafe_allow_html=True)
+        interview_type = st.radio("Choose interview focus:", ["Technical", "Behavioral"], horizontal=True)
+        if st.button("Generate Questions", type="primary"):
+            st.session_state.questions = generate_questions(interview_type)
+            st.session_state.start_time = datetime.datetime.now()
+            st.session_state.feedback = None
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('<div class="lottie-box">', unsafe_allow_html=True)
+    st_lottie(lottie_json, height=220, key="interview_lottie")
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True) 
+
     if "questions" in st.session_state:
         st.subheader("📋 Your Questions")
         answers = []
-        for i, q in enumerate(st.session_state.questions, start=1):
+        for i, q in enumerate(st.session_state.questions, 1):
             st.write(f"**{i}. {q}**")
-            answer = st.text_area("Your answer:", key=f"ans_{i}", height=120)
-            answers.append(answer)
+            answers.append(st.text_area("Your answer:", key=f"ans_{i}", height=120))
 
-        col1, col2 = st.columns([1, 3])
-        with col1:
+        colA, colB = st.columns([1, 3])
+        with colA:
             if st.button("Submit Answers & Get Feedback"):
-                st.session_state.feedback = get_feedback(
-                    st.session_state.questions, answers
-                )
-        with col2:
+                st.session_state.feedback = get_feedback(st.session_state.questions, answers)
+        with colB:
             if "start_time" in st.session_state:
                 elapsed = datetime.datetime.now() - st.session_state.start_time
                 st.info(f"⏱️ Time since questions generated: {elapsed.seconds//60} min {elapsed.seconds%60} s")
 
-        # Show feedback once available
         if st.session_state.get("feedback"):
             st.markdown("### 📝 Feedback")
             st.write(st.session_state.feedback)
 
+if __name__ == "__main__":
+    run()

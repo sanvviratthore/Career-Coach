@@ -4,14 +4,12 @@ import folium
 from openai import AzureOpenAI
 from streamlit_folium import st_folium
 
-# Your Azure Maps and OpenAI config
 azure_maps_key = "3pdOV7PLWQOOLunAlvdKIlRGdj0g7qPG6UgsnkO19Ge0VjSEouafJQQJ99BFACYeBjFAfOwiAAAgAZMP49Wn"
 azure_openai_endpoint = "https://sanvi-mbf58gtv-eastus2.cognitiveservices.azure.com/"
 azure_openai_api_key = "F8cvPQQ5iKHG8NUJY0GbhH4Zxhll5BJQUMOapCLVoDQ6xX9V70tYJQQJ99BFACHYHv6XJ3w3AAAAACOGaJVI"
 azure_openai_model = "gpt-4.1"
 azure_openai_deployment = "gpt-4.1"
 
-# Initialize Azure OpenAI client
 client = AzureOpenAI(
     api_key=azure_openai_api_key,
     azure_endpoint=azure_openai_endpoint,
@@ -32,7 +30,6 @@ def search_place(query):
             return pos["lat"], pos["lon"], top["address"]["freeformAddress"]
     return None, None, None
 
-# Function to get industry trends from Azure OpenAI
 def get_industry_trends(lat, lon):
     prompt = (
         f"You are a market analyst. Provide a brief analysis of industry trends "
@@ -53,7 +50,6 @@ def get_industry_trends(lat, lon):
 def run():
     st.title("🌍 Industry Trends Explorer with Search & Click Map")
 
-    # Session state defaults
     if "lat" not in st.session_state:
         st.session_state.lat = 28.6139
     if "lon" not in st.session_state:
@@ -65,7 +61,6 @@ def run():
     if "clicked" not in st.session_state:
         st.session_state.clicked = False
 
-    # Search box for place
     place_search = st.text_input("Search for a place:", key="place_search_input")
 
     if place_search:
@@ -78,10 +73,8 @@ def run():
         else:
             st.warning("Place not found, try another query.")
 
-    # Folium map setup
     m = folium.Map(location=[st.session_state.lat, st.session_state.lon], zoom_start=12)
 
-    # Add marker if clicked/searched
     if st.session_state.clicked:
         folium.Marker(
             location=[st.session_state.lat, st.session_state.lon],
@@ -90,7 +83,6 @@ def run():
             icon=folium.Icon(color="red"),
         ).add_to(m)
 
-    # Add click handler - update lat/lon on map click
     click_data = st_folium(m, height=500, width=700)
 
     if click_data and click_data.get("last_clicked"):
@@ -101,7 +93,6 @@ def run():
         st.session_state.address = f"Lat: {clicked_lat:.5f}, Lon: {clicked_lon:.5f}"
         st.session_state.clicked = True
 
-    # Button to fetch industry trends
     if st.button("Get Industry Trends"):
         if not st.session_state.clicked:
             st.warning("Please select a location by searching or clicking on the map.")
@@ -114,10 +105,10 @@ def run():
                 except Exception as e:
                     st.error(f"Error: {e}")
 
-    # Show industry trends
     if st.session_state.trends:
         st.markdown(f"### 📈 Industry Trends near {st.session_state.address}")
         st.write(st.session_state.trends)
 
 if __name__ == "__main__":
     run()
+    
