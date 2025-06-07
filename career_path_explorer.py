@@ -4,7 +4,7 @@ import json
 from streamlit_lottie import st_lottie
 
 client = AzureOpenAI(
-    api_key=st.secrets["azure_openai_api_key"],
+    api_key=st.secrets["openai_key"],
     azure_endpoint=st.secrets["azure_openai_endpoint"],
     api_version=["azure_openai_api_version"]
 )
