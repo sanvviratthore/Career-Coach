@@ -6,7 +6,8 @@ from streamlit_lottie import st_lottie
 client = AzureOpenAI(
     api_key=st.secrets["openai_key"],
     azure_endpoint=st.secrets["azure_openai_endpoint"],
-    api_version=["azure_openai_api_version"]
+    api_version = st.secrets["azure_openai_api_version"]
+
 )
 
 DEPLOYMENT = st.secrets["deployment"]
