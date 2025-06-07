@@ -5,3 +5,4 @@ azure-ai-formrecognizer
 azure-core
 python-dotenv
 pandas
+folium
