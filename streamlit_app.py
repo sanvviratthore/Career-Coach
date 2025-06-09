@@ -9,19 +9,20 @@ import industry_trends
 import mock_interview
 import resume_matcher
 import skill_builder
-import streamlit.components.v1 as components
 
-ga_code = """
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-W2CRK5T61J"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-W2CRK5T61J');
-</script>
-"""
+st.markdown(
+    """
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-W2CRK5T61J"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-W2CRK5T61J');
+    </script>
+    """,
+    unsafe_allow_html=True
+)
 
 def load_lottiefile(filepath: str):
     with open(filepath, "r") as f:
