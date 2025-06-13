@@ -11,20 +11,13 @@ import resume_matcher
 import skill_builder
 import streamlit.components.v1 as components
 
-# Read the Google Analytics HTML file
-with open("google_analytics.html", "r") as f:
-    ga_html = f.read()
-
-# Inject the HTML into the Streamlit app
-components.html(ga_html, height=0)
+st.set_page_config(page_title="Career Coach", layout="wide")
 
 def load_lottiefile(filepath: str):
     with open(filepath, "r") as f:
         return json.load(f)
 
 lottie_career = load_lottiefile("animations/Animation - 1748757720975.json")
-
-st.set_page_config(page_title="Career Coach", layout="wide")
 
 PAGES = {
     "🏠 Home": None,
