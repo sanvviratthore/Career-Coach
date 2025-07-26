@@ -1,0 +1,16 @@
+user_id,current_skills,recommended_skill
+1,"Python, SQL",Machine Learning
+2,"Java, Data Structures",System Design
+3,"Excel, SQL",Data Visualization
+4,"Python, Machine Learning",Deep Learning
+5,"Java, Algorithms",Cloud Computing
+6,"JavaScript, HTML, CSS",React.js
+7,"C++, Data Structures",Competitive Programming
+8,"Python, NLP",Transformers
+9,"C#, .NET",Azure Cloud
+10,"Kotlin, Android Development",Jetpack Compose
+11,"Docker, Kubernetes",CI/CD Pipelines
+12,"Linux, Shell Scripting",Cloud Infrastructure
+13,"React Native",Mobile App Optimization
+14,"Python, Pandas",Data Cleaning
+15,"Data Visualization, Power BI",Tableau

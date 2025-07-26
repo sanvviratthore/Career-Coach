@@ -23,7 +23,7 @@ lottie_resume = load_lottiefile("animations/Animation - 1749283614215.json")
 
 @st.cache_data
 def load_data():
-    return pd.read_csv('job_skills.csv')
+    return pd.read_csv('skill_data.csv')
 
 def analyze_resume_with_azure(pdf_bytes):
     poller = client.begin_analyze_document("prebuilt-document", document=pdf_bytes)
