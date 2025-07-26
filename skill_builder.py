@@ -5,12 +5,13 @@ from openai import AzureOpenAI
 import json
 from streamlit_lottie import st_lottie
 
-doc_key = st.secrets["doc_key"]
-doc_endpoint = st.secrets["doc_endpoint"]
+doc_key = st.secrets["azure_form_recognizer_key"]
+doc_endpoint = st.secrets["azure_form_recognizer_endpoint"]
 
-openai_key = st.secrets["openai_key"]
-openai_endpoint = st.secrets["openai_endpoint"]
-deployment = st.secrets["deployment"]
+# Updated Azure OpenAI secrets
+openai_key = st.secrets["azure_openai_api_key"]
+openai_endpoint = st.secrets["azure_openai_endpoint"]
+deployment = st.secrets["azure_openai_deployment"]
 api_version = st.secrets["azure_openai_api_version"]
 
 doc_client = DocumentAnalysisClient(

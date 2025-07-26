@@ -4,12 +4,12 @@ import json
 from streamlit_lottie import st_lottie
 
 client = AzureOpenAI(
-    api_key=st.secrets["openai_key"],
+    api_key=st.secrets["azure_openai_api_key"],
     azure_endpoint=st.secrets["azure_openai_endpoint"],
     api_version=st.secrets["azure_openai_api_version"]
 )
 
-DEPLOYMENT = st.secrets["deployment"]
+DEPLOYMENT = st.secrets["azure_openai_deployment"]
 
 def load_lottiefile(filepath: str):
     with open(filepath, "r") as f:
